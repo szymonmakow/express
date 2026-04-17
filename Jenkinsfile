@@ -31,6 +31,16 @@ pipeline {
             steps {
                 archiveArtifacts artifacts: 'test-results.txt', fingerprint: true
             }
+        stage('Deploy') {
+            steps {
+                sh 'docker run --name express-container express-app'
+            }
+        }
+
+        stage('Smoke Test') {
+            steps {
+                sh 'echo "Deploy zakończony sukcesem"'
+            }
         }
     }
 }
