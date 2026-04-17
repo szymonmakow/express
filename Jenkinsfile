@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        VERSION = "1.0.${env.BUILD_NUMBER}"
+    }
+
     stages {
 
         stage('Checkout') {
@@ -12,7 +16,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("express-app")
+                    docker.build("express-app:${VERSION}")
                 }
             }
         }
@@ -20,7 +24,7 @@ pipeline {
         stage('Test in Container') {
             steps {
                 script {
-                    docker.image("express-app").inside {
+                    docker.image("express-app:${VERSION}").inside {
                         sh 'npm test > test-results.txt'
                     }
                 }
@@ -35,13 +39,21 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                sh 'docker run --name express-container express-app'
+                sh 'docker rm -f express-container || true'
+                sh 'docker run --name express-container express-app:${VERSION}'
             }
         }
 
         stage('Smoke Test') {
             steps {
                 sh 'echo "Deploy zakończony sukcesem"'
+            }
+        }
+
+        stage('Publish') {
+            steps {
+                sh 'docker images'
+                sh 'echo "Image version: ${VERSION}"'
             }
         }
     }
