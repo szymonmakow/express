@@ -12,7 +12,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    dockerImage = docker.build("express-app")
+                    docker.build("express-app")
                 }
             }
         }
@@ -31,6 +31,8 @@ pipeline {
             steps {
                 archiveArtifacts artifacts: 'test-results.txt', fingerprint: true
             }
+        }
+
         stage('Deploy') {
             steps {
                 sh 'docker run --name express-container express-app'
