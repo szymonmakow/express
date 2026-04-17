@@ -2,12 +2,17 @@ pipeline {
     agent any
 
     stages {
-        stage('Build') {
+
+        stage('Checkout') {
             steps {
-                dir('express') {
-                    script {
-                        docker.build("express-app")
-                    }
+                git 'https://github.com/szymonmakow/express.git'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    docker.build("express-app")
                 }
             }
         }
