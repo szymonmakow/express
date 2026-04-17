@@ -20,11 +20,16 @@ pipeline {
         stage('Test in Container') {
             steps {
                 script {
-                    dockerImage.inside {
-                        sh 'npm install'
-                        sh 'npm test'
+                    docker.image("express-app").inside {
+                        sh 'npm test > test-results.txt'
                     }
                 }
+            }
+        }
+
+        stage('Artifacts') {
+            steps {
+                archiveArtifacts artifacts: 'test-results.txt', fingerprint: true
             }
         }
     }
