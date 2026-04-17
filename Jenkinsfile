@@ -12,7 +12,18 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("express-app")
+                    dockerImage = docker.build("express-app")
+                }
+            }
+        }
+
+        stage('Test in Container') {
+            steps {
+                script {
+                    dockerImage.inside {
+                        sh 'npm install'
+                        sh 'npm test'
+                    }
                 }
             }
         }
