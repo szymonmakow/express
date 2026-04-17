@@ -1,28 +1,19 @@
 pipeline {
-    agent {
-        docker { image 'node:18' }
-    }
+    agent any
+
     stages {
-        stage('Install') {
+        stage('Clone') {
             steps {
-                echo 'Instalacja zależności'
-                sh 'npm install'
+                git 'https://github.com/expressjs/express.git'
             }
         }
-        
-        stage('Test') {
+
+        stage('Build') {
             steps {
-                echo 'Uruchamianie testów'
-                sh 'npm test'
+                script {
+                    docker.build("express-app")
+                }
             }
-        }
-    }
-    post {
-        success {
-            echo 'Wszystkie testy przeszły'
-        }
-        failure {
-            echo 'Testy nie przeszły'
         }
     }
 }
