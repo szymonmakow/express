@@ -26,10 +26,12 @@ pipeline {
             }
         }
         stage('Test') {
-            steps {
-                sh "docker run --rm --name express-test ${REGISTRY}:${VERSION} npm test 2>&1 | tee test-results.txt || true"
-            }
+    steps {
+        timeout(time: 2, unit: 'MINUTES') {
+            sh "docker run --rm --name express-test ${REGISTRY}:${VERSION} npm test -- --exit 2>&1 | tee test-results.txt || true"
         }
+    }
+}
         stage('Artifacts') {
             steps {
                 archiveArtifacts artifacts: 'test-results.txt', fingerprint: true
