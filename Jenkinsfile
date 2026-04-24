@@ -54,20 +54,20 @@ pipeline {
         }
 
         stage('Smoke Test') {
-            steps {
-                script {
-                    sh '''
-                    for i in {1..10}; do
-                        curl -f http://localhost:3000 && exit 0
-                        echo "czekanie na start aplikacji"
-                        sleep 2
-                    done
-                    echo "Smoke test FAILED"
-                    exit 1
-                    '''
-                }
-            }
+    steps {
+        script {
+            sh '''
+            for i in {1..10}; do
+                docker exec express-container wget -qO- http://localhost:3000 && exit 0
+                echo "czekanie na start aplikacji..."
+                sleep 2
+            done
+            echo "Smoke test FAILED"
+            exit 1
+            '''
         }
+    }
+}
 
         stage('Publish') {
             steps {
