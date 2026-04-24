@@ -1,74 +1,61 @@
+def app  // ← deklaracja TUTAJ, przed pipeline, widoczna wszędzie
+
 pipeline {
     agent any
-
     environment {
-        VERSION  = "1.0.${env.BUILD_NUMBER}"
-        REGISTRY = "szymonmakow/express-app"
+        VERSION        = "1.0.${env.BUILD_NUMBER}"
+        REGISTRY       = "szymonmakow/express-app"
         CONTAINER_NAME = "express-container"
     }
-
     stages {
-
         stage('Clean') {
             steps {
                 cleanWs()
             }
         }
-
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
-
         stage('Build') {
             steps {
                 script {
-                    app = docker.build("${REGISTRY}:${VERSION}", "--no-cache .")
+                    app = docker.build("${REGISTRY}:${VERSION}", "--no-cache .")  // bez def
                 }
             }
         }
-
         stage('Test') {
             steps {
-                script {
-                    docker.image("${REGISTRY}:${VERSION}").inside {
-                        sh 'npm install'
-                        sh 'npm test > test-results.txt || true'
-                    }
-                }
+                sh "docker run --rm --name express-test ${REGISTRY}:${VERSION} npm test 2>&1 | tee test-results.txt || true"
             }
         }
-
         stage('Artifacts') {
             steps {
                 archiveArtifacts artifacts: 'test-results.txt', fingerprint: true
             }
         }
-
         stage('Deploy') {
             steps {
                 sh "docker rm -f ${CONTAINER_NAME} || true"
-                sh "docker run -d --name ${CONTAINER_NAME} -p 3000:3000 ${REGISTRY}:${VERSION}"
+                sh "docker run -d --name ${CONTAINER_NAME} ${REGISTRY}:${VERSION}"
             }
         }
-
         stage('Smoke Test') {
-    steps {
-        script {
-            sh '''
-            for i in {1..10}; do
-                docker exec express-container wget -qO- http://localhost:3000 && exit 0
-                echo "czekanie na start aplikacji..."
-                sleep 2
-            done
-            echo "Smoke test FAILED"
-            exit 1
-            '''
+            steps {
+                sh '''
+                for i in $(seq 1 10); do
+                    docker exec express-container node -e \
+                        "require('http').get('http://localhost:3000', r => { console.log('status:', r.statusCode); process.exit(r.statusCode < 500 ? 0 : 1); }).on('error', e => { console.log(e.message); process.exit(1); })" \
+                        && exit 0
+                    echo "czekanie na start aplikacji..."
+                    sleep 2
+                done
+                echo "Smoke test FAILED"
+                exit 1
+                '''
+            }
         }
-    }
-}
-
         stage('Publish') {
             steps {
                 script {
@@ -81,7 +68,6 @@ pipeline {
             }
         }
     }
-
     post {
         always {
             sh "docker rm -f ${CONTAINER_NAME} || true"
